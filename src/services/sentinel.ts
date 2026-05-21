@@ -125,11 +125,12 @@ function parseAavePositions(raw: any): AavePosition[] {
 
   return raw.data.map((item: any) => {
     const underlying = item.underlyingToken || {};
+    const decimals = underlying.decimals || 18;
     return {
       asset: (underlying.symbol || "UNKNOWN").toUpperCase(),
-      supplied: parseFloat(item.supplyAmount || 0),
+      supplied: parseFloat(item.supplyAmount || 0) / (10 ** decimals),
       suppliedUsd: parseFloat(item.supplyAmountUsd || 0),
-      borrowed: parseFloat(item.borrowAmount || 0),
+      borrowed: parseFloat(item.borrowAmount || 0) / (10 ** decimals),
       borrowedUsd: parseFloat(item.borrowAmountUsd || 0),
       supplyApy: parseFloat(item.supplyApy || 0),
       borrowApy: parseFloat(item.borrowApy || 0),

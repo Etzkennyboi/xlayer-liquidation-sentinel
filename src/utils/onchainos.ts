@@ -5,7 +5,9 @@
  * No direct RPC contract calls.
  */
 
-import { execSync } from "child_process";
+import { exec } from "child_process";
+import { promisify } from "util";
+const execAsync = promisify(exec);
 
 const CLI_TIMEOUT_MS = 30000;
 
@@ -15,9 +17,9 @@ interface OnchainOSResult {
   error?: string;
 }
 
-function runCommand(command: string): OnchainOSResult {
+async function runCommand(command: string): Promise<OnchainOSResult> {
   try {
-    const output = execSync(`onchainos ${command} --json`, {
+    const { stdout } = await execAsync(`onchainos ${command} --json`, {
       timeout: CLI_TIMEOUT_MS,
       encoding: "utf-8",
       env: {
@@ -27,7 +29,7 @@ function runCommand(command: string): OnchainOSResult {
         OKX_PASSPHRASE: process.env.OKX_PASSPHRASE || "",
       },
     });
-    const parsed = JSON.parse(output);
+    const parsed = JSON.parse(stdout);
     return { success: true, data: parsed };
   } catch (err: any) {
     try {
@@ -43,7 +45,7 @@ function runCommand(command: string): OnchainOSResult {
 // ── Aave V3 Data ──
 
 export async function getAaveAccountHealth(address: string): Promise<any> {
-  const result = runCommand(`defi positions --address ${address} --chains xlayer`);
+  const result = await runCommand(`defi positions --address ${address} --chains xlayer`);
   if (!result.success) {
     throw new Error(`Failed to fetch Aave positions: ${result.error}`);
   }
@@ -51,7 +53,7 @@ export async function getAaveAccountHealth(address: string): Promise<any> {
 }
 
 export async function getAaveReserveDetail(investmentId: string): Promise<any> {
-  const result = runCommand(`defi detail --investment-id ${investmentId}`);
+  const result = await runCommand(`defi detail --investment-id ${investmentId}`);
   if (!result.success) {
     throw new Error(`Failed to fetch reserve detail: ${result.error}`);
   }
@@ -61,7 +63,7 @@ export async function getAaveReserveDetail(investmentId: string): Promise<any> {
 // ── Price Data ──
 
 export async function getTokenPrice(tokenAddress: string): Promise<any> {
-  const result = runCommand(`market price --address ${tokenAddress.toLowerCase()} --chain xlayer`);
+  const result = await runCommand(`market price --address ${tokenAddress.toLowerCase()} --chain xlayer`);
   if (!result.success) {
     throw new Error(`Failed to fetch price: ${result.error}`);
   }
@@ -69,7 +71,7 @@ export async function getTokenPrice(tokenAddress: string): Promise<any> {
 }
 
 export async function getTokenPriceHistory(tokenAddress: string, period: string = "24h"): Promise<any> {
-  const result = runCommand(`market kline --address ${tokenAddress.toLowerCase()} --chain xlayer --period ${period}`);
+  const result = await runCommand(`market kline --address ${tokenAddress.toLowerCase()} --chain xlayer --period ${period}`);
   if (!result.success) {
     throw new Error(`Failed to fetch price history: ${result.error}`);
   }
@@ -79,7 +81,7 @@ export async function getTokenPriceHistory(tokenAddress: string, period: string 
 // ── Wallet Data ──
 
 export async function getWalletBalances(address: string): Promise<any> {
-  const result = runCommand(`portfolio all-balances --address ${address} --chains xlayer`);
+  const result = await runCommand(`portfolio all-balances --address ${address} --chains xlayer`);
   if (!result.success) {
     throw new Error(`Failed to fetch balances: ${result.error}`);
   }
@@ -89,7 +91,7 @@ export async function getWalletBalances(address: string): Promise<any> {
 // ── Token Search ──
 
 export async function searchToken(query: string): Promise<any[]> {
-  const result = runCommand(`token search --query "${query}" --chains xlayer`);
+  const result = await runCommand(`token search --query "${query}" --chains xlayer`);
   if (!result.success) {
     throw new Error(`Failed to search token: ${result.error}`);
   }
